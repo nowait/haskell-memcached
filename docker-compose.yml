@@ -1,0 +1,12 @@
+memcached:
+    image: memcached
+
+haskell:
+    build: .
+    tty: true
+    stdin_open: true
+    links:
+        - memcached
+    volumes:
+        - .:/home/dev/work
+    working_dir: /home/dev/work

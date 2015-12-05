@@ -1,0 +1,88 @@
+= Using Docker to Develop and Test the Haskell Memcached API
+
+== Why do I want this?
+
+* Enforces build consistency
+* Isolates and encapsulates dependencies and dev environment
+* No need to provision individual dev machines
+* Easily target the production architecture (no cross-compilation)
+* Provides ephemeral infrastructure (memached server, in this case)
+* Build once -- facilitates continuous delivery and/or deployment
+
+== And what *is* this, exactly?
+
+Included here is an automated container definition of the development environment and a minimal application runtime for testing.
+
+== Requirements
+
+On a reasonably up-to-date linux box you will need to install:
+
+* docker-engine
+* docker-compose
+
+Other operating systems will require the above and `docker-machine` besides. It is recommended to install Docker Toolbox, which should include all that is needed.
+
+Specific installation for a variety of platforms may be found at http://docs.docker.com/engine/installation/
+
+== Putting Docker to work
+
+`docker-compose` is a tool to 'compose' applications from individual Docker containers. To bring everything up, run
+
+    $ docker-compose up -d
+
+This will pull images, build the build the dev image and create and run the containers. 
+
+NOTE: Pulling and building are only invoked initially (or when an image is invalidated). They will be locally available subsequently.
+
+Do:
+    $ docker ps
+    
+to see the newly created containers:
+
+    CONTAINER ID        IMAGE                             COMMAND                CREATED             STATUS              PORTS               NAMES
+    9e75930c2023        haskellmemcached_haskell:latest   "/bin/sh -c '$SHELL    45 seconds ago      Up 44 seconds                           haskellmemcached_haskell_1    
+    9fb03ced9663        memcached:latest                  "/entrypoint.sh memc   5 minutes ago       Up 5 minutes        11211/tcp           haskellmemcached_memcached_1
+
+haskellmemcached_haskell_1:: 
+
+    This container is the development environment.
+
+haskellmemcached_memcached_1::
+
+    This provides the memcached server.
+
+=== Development
+
+To run a minimal interactive development environment, execute:
+
+    $ docker-compose run haskell
+
+You will find yourself in a shell within a container (specifically, `haskellmemcached_haskell_1`) in this current directory, which will have been effectively 'mounted' there from the host machine. If you are a tmux/vim user, you should be happy to begin with this (a bare emacs is also provided).  If you require more, it is also possible to edit in a separate window directly from the host box. 
+
+NOTE: The actual build environment is isolated within the container. Certain IDE interoperability and build commends, etc., may not work as expected in this mode of work.
+
+It is expected that the Dockerfile be tweaked and also extended to meet whatever additional requirements there may be.
+
+
+=== Automated tests
+
+There are a few `hunit` tests included that may be run:
+
+    $ docker-compose run haskell sh -l ./run_tests
+
+Note that these are *not* proper unit tests in that they involve actual infrastructure; they will be run against a real memcached server.
+
+It is also possible to run them manually, while interactively developing.
+
+Run the container, as described above:
+
+    $ docker-compose run haskell
+
+within this shell do:
+
+    $ cabal install   --enable-tests
+    $ cabal configure --enable-tests
+    $ runhaskell Memcached_Test.hs
+
+
+TODO: trigger this testframe with travis
