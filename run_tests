@@ -1,0 +1,5 @@
+#!/bin/sh
+
+cabal install   --enable-tests
+cabal configure --enable-tests
+cabal test
